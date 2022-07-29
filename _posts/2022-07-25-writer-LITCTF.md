@@ -483,4 +483,3 @@ while True :
         quit()
     sock = conn()
 ```
-Here's the final exploit
