@@ -6,21 +6,23 @@ title: "Writer: stack shenenigans"
 
 ## Background
 
-Last weekend(7/22/2022 - 7/24/2022) the good folks at the infomatics club at Lexington High School ran a CTF. The CTF offered 9 pwn challenges, of which I solved 5. One of those challenges was
-writer. By the end of the CTF, Writer had 30 solves and was worth 242 points.
-*This writeup assumes that you are familiar with ROP chains*
+Last weekend(7/22/2022 - 7/24/2022) the good folks at the informatics club at Lexington High School ran a CTF. The CTF offered 9 pwn challenges, of which I solved 5. One of those challenges was
+named writer. By the end of the CTF, Writer had 30 solves and was worth 242 points.
+<br>
+*This writeup assumes that you are familiar with ROP chains and the Global Offset Table in ELF binaries*
 
 ## The Challenge
 
 The challenge binary is pretty simple. The binary lets you read an integer from an arbitrary location, and then it lets you write an integer to an arbitrary location. After that, it asks you for
-feedback on the challenge, and reads in 0x80 bytes to a pointer on the stack. 
+feedback on the challenge, and reads in 0x80 bytes to an array on the stack. 
 ```C
     char a[0x80];
     a[read(0, a, 0x80) - 0x1] = '\0';
     puts("");
 ```
-From this point on, I'll be referring to this buffer as the "feedback buffer"
+From this point on, I'll be referring to this buffer as the "feedback buffer".
 It then prints your feedback using `puts()`, and then exits via calling `exit()`.
+<br>
 Let's take a look at its protections:
 ![Binary Protections]({{site.url}}/assets/writer-LITCTF/checksecprotections.png)
 
@@ -57,8 +59,9 @@ Note that the challenge binary only lets you read a *signed integer* from an arb
     puts("");
 ```
 
-This means that we can only read 4 bytes, and we can only write 4 bytes. Remember, after our read and write, the binary will call exit!  Given these constraints, we can't really do much in one run of the program.
-Most libc addresses are 8 bytes long, so we won't be able to get a full libc leak off. Without a libc leak, it's very hard to get a shell. We won't be able to call system
+This means that we can only read 4 bytes, and we can only write 4 bytes. Remember, after our read and write, the binary will prompt us for feedback and then call exit! 
+Given these constraints, we can't really do much in one run of the program.
+Most libc addresses are 8 bytes long, so we won't be able to get a full libc leak off. Without a libc leak, it's very hard to do anything interesting. We won't be able to call system
 or execute a syscall, because we don't know the address of the instructions that do those things. We can only write 4 bytes, so we can't build a rop chain.
 
 Initially, I thought about trying to overwrite data in a file stream(stdin/stdout/stderr) to carry out an FSOP(**F**ile **S**tream **O**riented **P**rogramming) attack. However, we can't get a libc leak, 
@@ -66,7 +69,7 @@ so we don't know where the file streams are.
 
 ### The Solution: a GOT overwrite!
 
-Arbitrary reads and writes are very powerful primitives. We might not be able to do much with only one run of this program, but if we can get this program to run as many times as we want,
+Arbitrary reads and writes are very powerful primitives. We might not be able to do much with only one run of this program, but if we can get this program to run as many times as we want, thereby giving us multiple reads and writes,
 then we can do a lot of fun stuff. The program exits by calling `exit()`. If we overwrite the entry for `exit()` in GOT to point to the start of `main()`, then the program will run an
 infinite number of times. Instead of exiting after our read and write, it'll jump back to the start of `main()`, giving us another read and write. 
 
