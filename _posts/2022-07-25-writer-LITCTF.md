@@ -1,7 +1,6 @@
 ---
 layout: post
-title: 
-title: "Writer: stack shenenigans"
+title: "LICTF 2022 Writeup - Writer"
 ---
 
 ## Background
