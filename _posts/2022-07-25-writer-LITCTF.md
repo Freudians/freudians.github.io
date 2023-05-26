@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "LICTF 2022 Writeup - Writer"
+title: "LITCTF 2022 Writeup - Writer"
 ---
 
 ## Background

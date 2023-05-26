@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Queuestackarray: fun with data structures"
+title: "HSCTF 2022 Writeup - Queuestackarray"
 ---
 
 ## Overview
